@@ -247,7 +247,7 @@ public:
     // Fallback method to be overridden if needed
     virtual E execFallback(P prepResult, const std::exception& lastException) {
         // Default behavior is to re-throw the last exception
-        throw PocketFlowException("Node execution failed after " + std::to_string(maxRetries) + " retries, and fallback was not implemented or also failed.", lastException);
+        throw NeuralFlowException("Node execution failed after " + std::to_string(maxRetries) + " retries, and fallback was not implemented or also failed.", lastException);
     }
 
 protected:
@@ -281,7 +281,7 @@ protected:
                         std::this_thread::sleep_for(std::chrono::milliseconds(waitMillis));
                     } catch (...) {
                         // Handle potential exceptions during sleep? Unlikely but possible.
-                        throw PocketFlowException("Thread interrupted during retry wait", std::runtime_error("sleep interrupted"));
+                        throw NeuralFlowException("Thread interrupted during retry wait", std::runtime_error("sleep interrupted"));
                     }
                 }
             } catch (...) { // Catch non-std exceptions if necessary
@@ -295,15 +295,15 @@ protected:
         // If loop finishes, all retries failed
         try {
             if (!lastExceptionPtr) {
-                 throw PocketFlowException("Execution failed after retries, but no exception was captured.");
+                 throw NeuralFlowException("Execution failed after retries, but no exception was captured.");
             }
              // Call fallback, passing a reference to the stored exception approximation
             return execFallback(std::move(prepResult), *lastExceptionPtr);
         } catch (const std::exception& fallbackException) {
             // If fallback fails, throw appropriate exception
-             throw PocketFlowException("Fallback execution failed after main exec retries failed.", fallbackException);
+             throw NeuralFlowException("Fallback execution failed after main exec retries failed.", fallbackException);
         } catch (...) {
-             throw PocketFlowException("Fallback execution failed with non-standard exception.", std::runtime_error("Unknown fallback error"));
+             throw NeuralFlowException("Fallback execution failed with non-standard exception.", std::runtime_error("Unknown fallback error"));
         }
     }
 };
@@ -323,7 +323,7 @@ public:
 
     virtual OUT_ITEM execItemFallback(const IN_ITEM& item, const std::exception& lastException) {
         // Default fallback re-throws
-         throw PocketFlowException("Batch item execution failed after retries, and fallback was not implemented or also failed.", lastException);
+         throw NeuralFlowException("Batch item execution failed after retries, and fallback was not implemented or also failed.", lastException);
     }
 
     // --- Base class methods that MUST NOT be overridden by user ---
@@ -337,7 +337,7 @@ public:
      // Fallback for the whole batch (rarely needed if item fallback exists)
      std::vector<OUT_ITEM> execFallback(std::vector<IN_ITEM> prepResult, const std::exception& lastException) final {
          // This fallback applies if the *looping* itself fails, not individual items.
-         throw PocketFlowException("BatchNode internal execution loop failed.", lastException);
+         throw NeuralFlowException("BatchNode internal execution loop failed.", lastException);
      }
 
 
@@ -379,13 +379,13 @@ protected:
              if (!itemSuccess) {
                  try {
                      if (!lastItemExceptionPtr) {
-                         throw PocketFlowException("Item execution failed without exception for item."); // Add item info if possible
+                         throw NeuralFlowException("Item execution failed without exception for item."); // Add item info if possible
                      }
                      itemResult = execItemFallback(item, *lastItemExceptionPtr); // Call user fallback
                  } catch (const std::exception& fallbackEx) {
-                      throw PocketFlowException("Item fallback execution failed.", fallbackEx); // Add item info if possible
+                      throw NeuralFlowException("Item fallback execution failed.", fallbackEx); // Add item info if possible
                  } catch (...) {
-                      throw PocketFlowException("Item fallback failed with non-standard exception.", std::runtime_error("Unknown item fallback error"));
+                      throw NeuralFlowException("Item fallback failed with non-standard exception.", std::runtime_error("Unknown item fallback error"));
                  }
              }
              results.push_back(std::move(itemResult)); // Move if possible
