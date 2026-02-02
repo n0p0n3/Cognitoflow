@@ -1,5 +1,5 @@
-#ifndef NEURALFLOW_H
-#define NEURALFLOW_H
+#ifndef COGNITOFLOW_H
+#define COGNITOFLOW_H
 
 #include <iostream>
 #include <string>
@@ -14,7 +14,7 @@
 #include <functional> // For std::function if needed (not strictly used here yet)
 #include <utility> // For std::move
 
-namespace neuralflow {
+namespace cognitoflow {
 
 // --- Type Definitions ---
 using Context = std::map<std::string, std::any>;
@@ -26,14 +26,14 @@ using Params = std::map<std::string, std::any>;
 
 // --- Utility Functions ---
 inline void logWarn(const std::string& message) {
-    std::cerr << "WARN: NeuralFlow - " << message << std::endl;
+    std::cerr << "WARN: CognitoFlow - " << message << std::endl;
 }
 
 // --- Custom Exception ---
-class NeuralFlowException : public std::runtime_error {
+class CognitoFlowException : public std::runtime_error {
 public:
-    NeuralFlowException(const std::string& message) : std::runtime_error(message) {}
-    NeuralFlowException(const std::string& message, const std::exception& cause)
+    CognitoFlowException(const std::string& message) : std::runtime_error(message) {}
+    CognitoFlowException(const std::string& message, const std::exception& cause)
         : std::runtime_error(message + " (Caused by: " + cause.what() + ")") {} // Simple cause handling
 };
 
@@ -247,7 +247,7 @@ public:
     // Fallback method to be overridden if needed
     virtual E execFallback(P prepResult, const std::exception& lastException) {
         // Default behavior is to re-throw the last exception
-        throw NeuralFlowException("Node execution failed after " + std::to_string(maxRetries) + " retries, and fallback was not implemented or also failed.", lastException);
+        throw CognitoFlowException("Node execution failed after " + std::to_string(maxRetries) + " retries, and fallback was not implemented or also failed.", lastException);
     }
 
 protected:
@@ -281,7 +281,7 @@ protected:
                         std::this_thread::sleep_for(std::chrono::milliseconds(waitMillis));
                     } catch (...) {
                         // Handle potential exceptions during sleep? Unlikely but possible.
-                        throw NeuralFlowException("Thread interrupted during retry wait", std::runtime_error("sleep interrupted"));
+                        throw CognitoFlowException("Thread interrupted during retry wait", std::runtime_error("sleep interrupted"));
                     }
                 }
             } catch (...) { // Catch non-std exceptions if necessary
@@ -295,15 +295,15 @@ protected:
         // If loop finishes, all retries failed
         try {
             if (!lastExceptionPtr) {
-                 throw NeuralFlowException("Execution failed after retries, but no exception was captured.");
+                 throw CognitoFlowException("Execution failed after retries, but no exception was captured.");
             }
              // Call fallback, passing a reference to the stored exception approximation
             return execFallback(std::move(prepResult), *lastExceptionPtr);
         } catch (const std::exception& fallbackException) {
             // If fallback fails, throw appropriate exception
-             throw NeuralFlowException("Fallback execution failed after main exec retries failed.", fallbackException);
+             throw CognitoFlowException("Fallback execution failed after main exec retries failed.", fallbackException);
         } catch (...) {
-             throw NeuralFlowException("Fallback execution failed with non-standard exception.", std::runtime_error("Unknown fallback error"));
+             throw CognitoFlowException("Fallback execution failed with non-standard exception.", std::runtime_error("Unknown fallback error"));
         }
     }
 };
@@ -323,7 +323,7 @@ public:
 
     virtual OUT_ITEM execItemFallback(const IN_ITEM& item, const std::exception& lastException) {
         // Default fallback re-throws
-         throw NeuralFlowException("Batch item execution failed after retries, and fallback was not implemented or also failed.", lastException);
+         throw CognitoFlowException("Batch item execution failed after retries, and fallback was not implemented or also failed.", lastException);
     }
 
     // --- Base class methods that MUST NOT be overridden by user ---
@@ -337,7 +337,7 @@ public:
      // Fallback for the whole batch (rarely needed if item fallback exists)
      std::vector<OUT_ITEM> execFallback(std::vector<IN_ITEM> prepResult, const std::exception& lastException) final {
          // This fallback applies if the *looping* itself fails, not individual items.
-         throw NeuralFlowException("BatchNode internal execution loop failed.", lastException);
+         throw CognitoFlowException("BatchNode internal execution loop failed.", lastException);
      }
 
 
@@ -379,13 +379,13 @@ protected:
              if (!itemSuccess) {
                  try {
                      if (!lastItemExceptionPtr) {
-                         throw NeuralFlowException("Item execution failed without exception for item."); // Add item info if possible
+                         throw CognitoFlowException("Item execution failed without exception for item."); // Add item info if possible
                      }
                      itemResult = execItemFallback(item, *lastItemExceptionPtr); // Call user fallback
                  } catch (const std::exception& fallbackEx) {
-                      throw NeuralFlowException("Item fallback execution failed.", fallbackEx); // Add item info if possible
+                      throw CognitoFlowException("Item fallback execution failed.", fallbackEx); // Add item info if possible
                  } catch (...) {
-                      throw NeuralFlowException("Item fallback failed with non-standard exception.", std::runtime_error("Unknown item fallback error"));
+                      throw CognitoFlowException("Item fallback failed with non-standard exception.", std::runtime_error("Unknown item fallback error"));
                  }
              }
              results.push_back(std::move(itemResult)); // Move if possible
@@ -519,6 +519,6 @@ public:
 };
 
 
-} // namespace neuralflow
+} // namespace cognitoflow
 
-#endif // NEURALFLOW_H
+#endif // COGNITOFLOW_H
