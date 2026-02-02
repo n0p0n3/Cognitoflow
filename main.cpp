@@ -1,4 +1,4 @@
-#include "neuralflow.h"
+#include "cognitoflow.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -6,7 +6,7 @@
 #include <memory> // For std::make_shared
 
 // Use the namespace
-using namespace neuralflow;
+using namespace cognitoflow;
 
 // --- Test Node Implementations ---
 
@@ -82,9 +82,9 @@ public:
         try {
             return std::any_cast<int>(ctx.at("currentValue"));
         } catch (const std::out_of_range& oor) {
-            throw NeuralFlowException("Context missing 'currentValue' for AddNumberNode");
+            throw CognitoFlowException("Context missing 'currentValue' for AddNumberNode");
         } catch (const std::bad_any_cast& bac) {
-             throw NeuralFlowException("'currentValue' in context is not an int for AddNumberNode");
+             throw CognitoFlowException("'currentValue' in context is not an int for AddNumberNode");
         }
     }
 
